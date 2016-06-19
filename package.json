@@ -1,0 +1,23 @@
+{
+  "name": "electron-tube",
+  "version": "1.0.0",
+  "description": "watch stuff on kisscartoon.me without all the fucking adverts!",
+  "main": "index.js",
+  "scripts": {
+    "start": "electron main.js"
+  },
+  "author": "who knows",
+  "license": "ISC",
+  "devDependencies": {
+    "electron-prebuilt": "^1.2.0"
+  },
+  "dependencies": {
+    "angular": "^1.5.7",
+    "angular-sanitize": "^1.5.7",
+    "angular-ui-router": "^0.3.1",
+    "bootstrap": "^3.3.6",
+    "casperjs": "^1.1.1",
+    "jquery": "^3.0.0",
+    "lodash": "^4.13.1"
+  }
+}
