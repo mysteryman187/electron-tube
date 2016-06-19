@@ -78,3 +78,36 @@ registerAsyncRequestResponseMessageHandler('search', function(request, done){
   		myWindow.close();
   	});
 });
+
+
+
+
+function getKissCartoonCookie(){  
+
+  var myWindow = createOffScreenUtilityWindow();
+  myWindow.loadURL('http://kisscartoon.me/');  
+
+
+  // we might land on teh wait 5 seconds page or we might land on the actual page
+  myWindow.webContents.once('dom-ready', () => {
+
+    var timeoutId = setTimeout(function(){
+      console.log('we must have already had the cookie so close this window');
+      myWindow.close();
+    }, 9000);
+    
+    myWindow.webContents.once('dom-ready', () => {
+        // if we landed on the "wait 5 secons page" then we have now be redirected to the actual page and should have the cookie
+        console.log('got the cookie!');
+        myWindow.close();
+        clearTimeout(timeoutId);
+    });
+
+
+  });
+
+
+}
+
+const app = electron.app;
+app.on('ready', getKissCartoonCookie);
