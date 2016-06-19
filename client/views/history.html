@@ -1,7 +1,13 @@
 <ul class="nav nav-pills">
   <li ng-repeat="item in historyItems" role="presentation">
-  	<a ui-state="'app.searchResults'" ui-state-params="{query: item}" style="display:inline-block;">{{item}}</a>
+  	<a ui-state="'app.views.searchResults'" ui-state-params="{query: item}" style="display:inline-block;">{{item}}</a>
   	<span class="glyphicon glyphicon-remove" aria-hidden="true" ng-click="removeItem(item)" style="margin-left: -16px;color: #AA0000"></span>
   </li>
+
+  <div class="input-group">
+  	   <input type="text" class="form-control" placeholder="Search for..." ng-model="search" ng-keyup="keyUp($event)" style="margin-left:10px;">
+	   <span class="input-group-btn">
+    	    <button class="btn btn-default" type="button" ng-click="go()">Go!</button>
+   		</span>
+  </div>
 </ul>
-<input ng-model="search" ng-keyup="keyUp($event)" style="position:fixed; top: 10px; right: 10px;">

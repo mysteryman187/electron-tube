@@ -12,9 +12,14 @@ var app = angular.module('kissfucker', ['ui.router', 'ngSanitize']);
 
 app.config(function($stateProvider, $urlRouterProvider){
 	
-	$urlRouterProvider.otherwise('/app');
+	$urlRouterProvider.otherwise('/app/views');
 	$stateProvider.state('app', {
+		abstract: true,
 		url: '/app',
+		controller: 'appCtrl',
+		templateUrl: './views/app.html',
+	}).state('app.views', {
+		url: '/views',
 		views: {
 			history: {
 				templateUrl: './views/history.html',
@@ -27,7 +32,7 @@ app.config(function($stateProvider, $urlRouterProvider){
 			 	template: '<div ui-view="searchResults"></div>'
 			 }
 		}
-	}).state('app.searchResults', {
+	}).state('app.views.searchResults', {
 		url: '/searchResults/:query',
 		resolve:{
 			results: function(search, $stateParams){
@@ -35,12 +40,12 @@ app.config(function($stateProvider, $urlRouterProvider){
 			}
 		},
 		views: {
-			'searchResults@app': {
+			'searchResults@app.views': {
 				templateUrl: './views/search.html',
 				controller: 'searchResultsCtrl'
 			}
 		}
-	}).state('app.searchResults.episodes', {
+	}).state('app.views.searchResults.episodes', {
 		url: '/episodes/:query',
 		resolve:{
 			episodes: function(episodeService, $stateParams){
@@ -48,12 +53,12 @@ app.config(function($stateProvider, $urlRouterProvider){
 			}
 		},
 		views: {
-			'searchResults@app': {
+			'searchResults@app.views': {
 				templateUrl: './views/episodes.html',
 				controller: 'episodesCtrl'
 			}
 		}
-	}).state('app.searchResults.episodes.play', {
+	}).state('app.views.searchResults.episodes.play', {
 		url: '/player/:episodeUrl',
 		resolve:{
 			videoHtml: function($stateParams){
@@ -61,7 +66,7 @@ app.config(function($stateProvider, $urlRouterProvider){
 			}
 		},	
 		views:{
-			'play@app':{
+			'play@app.views':{
 				controller: 'playerCtrl',
 				templateUrl: './views/player.html'
 			}	
@@ -88,8 +93,19 @@ app.factory('historyItems', function(){
 	};
 });
 
-app.controller('appCtrl', function(){
+app.controller('appCtrl', function($scope, $timeout){
+	var removeAfter = function(t){
+		$timeout(function(){
+			$scope.errorMessage = null;
+		}, t);
+	};
 
+	$scope.$on('error', function(event, error){
+		if(angular.isString(error)){
+			$scope.errorMessage = error;
+		}
+		removeAfter(4000);
+	});
 });
 
 app.controller('historyCtrl', function($scope, $state, historyItems){
@@ -98,10 +114,18 @@ app.controller('historyCtrl', function($scope, $state, historyItems){
 	$scope.keyUp = (e) => {
 		var isEnter = e.keyCode === 13;
 		if (isEnter) {
+			$scope.go();
+		}
+	};
+
+	$scope.go = function(){
+		if ($scope.search && $scope.search.length > 2) {
 			$scope.historyItems.push($scope.search);
-			$state.go('app.searchResults', {query: $scope.search}, {});
+			$state.go('app.views.searchResults', {query: $scope.search}, {});
 			$scope.search = '';
 			historyItems.set($scope.historyItems);
+		} else {
+			$scope.$emit('error', 'search requires > 2 characters');
 		}
 	};
 

@@ -15,14 +15,15 @@ function createWindow () {
     y: 0,
     width: 900,
     height: 900,
-    frame: true
+    frame: true,
+    autoHideMenuBar: true
   });
  
   // and load the index.html of the app.
   mainWindow.loadURL(`file://${__dirname}/client/index.html`);
 
   // Open the DevTools.
-  mainWindow.webContents.openDevTools()
+  //mainWindow.webContents.openDevTools()
 
   // Emitted when the window is closed.
   mainWindow.on('closed', function () {
