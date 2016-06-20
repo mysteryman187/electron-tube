@@ -24,6 +24,7 @@ function createOffScreenUtilityWindow(){
     	height: 800,
     	frame: true,
     	skipTaskbar: true,
+      nodeIntegration: false, // this is very important for security
     	webPreferences : {
     		preload: `${__dirname}//crawler/crawler-preload.js`,
     	}
