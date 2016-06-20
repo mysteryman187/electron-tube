@@ -1,5 +1,12 @@
-<ul class="nav nav-pills nav-stacked">
-   <li ng-repeat="result in results" role="presentation" ui-state="'app.views.searchResults.episodes'" ui-state-params="{query: result.href}">
-   		<a>{{result.text}}</a>
-   </li>
-</ul>
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">Seasons</h3>
+  </div>
+  <div class="panel-body">
+ 		<ul class="nav nav-pills nav-stacked">
+ 		   <li ng-repeat="result in results" role="presentation" ui-state="'app.views.searchResults.episodes'" ui-state-params="{url: result.href, seasonTitle: result.text}">
+ 		   		<a>{{result.text}}</a>
+ 		   </li>
+ 		</ul>
+  </div>
+</div>

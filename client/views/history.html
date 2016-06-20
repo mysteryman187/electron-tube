@@ -1,7 +1,7 @@
 <ul class="nav nav-pills">
-  <li ng-repeat="item in historyItems" role="presentation">
-  	<a ui-state="'app.views.searchResults'" ui-state-params="{query: item}" style="display:inline-block;">{{item}}</a>
-  	<span class="glyphicon glyphicon-remove" aria-hidden="true" ng-click="removeItem(item)" style="margin-left: -16px;color: #AA0000"></span>
+  <li ng-repeat="item in historyItems" role="presentation" ui-sref-active="active">
+  	<a ui-state="'app.views.searchResults'" ui-state-params="{query: item}" style="display:inline-block;padding: 10px 30px 10px 10px;">{{item}}</a>
+  	<span class="glyphicon glyphicon-remove" aria-hidden="true" ng-click="removeItem(item)" style="margin-left: -26px;color: #AA0000"></span>
   </li>
 
   <div class="input-group">

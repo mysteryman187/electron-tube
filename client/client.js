@@ -1,6 +1,3 @@
-
-
-
 const {ipcRenderer} = require('electron');
 const $ = require('jquery');
 const angular = require('angular');
@@ -30,13 +27,22 @@ app.config(function($stateProvider, $urlRouterProvider){
 			},
 			search: {
 			 	template: '<div ui-view="searchResults"></div>'
-			 }
+			},
+			recent: {
+				templateUrl: './views/recent.html',
+				controller: 'recentCtrl'
+			}
 		}
 	}).state('app.views.searchResults', {
 		url: '/searchResults/:query',
 		resolve:{
-			results: function(search, $stateParams){
-				return search($stateParams.query);		
+			results: function(search, $stateParams) {
+				console.log('search now!');
+				if ($stateParams.query) {
+					return search($stateParams.query);		
+				} else {
+					return [];
+				}
 			}
 		},
 		views: {
@@ -46,10 +52,13 @@ app.config(function($stateProvider, $urlRouterProvider){
 			}
 		}
 	}).state('app.views.searchResults.episodes', {
-		url: '/episodes/:query',
+		url: '/episodes/:seasonTitle/:url',
 		resolve:{
+
+			seasonTitle: ($stateParams) => $stateParams.seasonTitle,
+
 			episodes: function(episodeService, $stateParams){
-				return episodeService($stateParams.query);		
+				return episodeService($stateParams.url);		
 			}
 		},
 		views: {
@@ -59,15 +68,18 @@ app.config(function($stateProvider, $urlRouterProvider){
 			}
 		}
 	}).state('app.views.searchResults.episodes.play', {
-		url: '/player/:episodeUrl',
+		url: '/player/:episodeTitle/:episodeUrl',
 		resolve:{
+			
+			episodeTitle: ($stateParams) => $stateParams.episodeTitle,
+
 			videoHtml: function($stateParams){
 				return extractVideoElement($stateParams.episodeUrl);
 			}
 		},	
 		views:{
 			'play@app.views':{
-				controller: 'playerCtrl',
+				controller: 'playCtrl',
 				templateUrl: './views/player.html'
 			}	
 		}
@@ -75,20 +87,61 @@ app.config(function($stateProvider, $urlRouterProvider){
 
 });
 
-app.factory('historyItems', function(){
+
+app.controller('recentCtrl', function($scope, recentlyWatchedItems){
+	$scope.items = recentlyWatchedItems.get();
+	$scope.$on('$stateChangeSuccess', function(event, toState, toParams){
+		if(toState.name === 'app.views.searchResults.episodes.play'){
+			var newItem = {
+				title:toParams.episodeTitle,
+				url:toParams.episodeUrl
+			};
+			$scope.items.unshift(newItem);
+			$scope.items = _.uniqWith($scope.items, angular.equals );
+			$scope.items = $scope.items.slice(0, 30);
+			recentlyWatchedItems.set($scope.items);			
+		}
+	});
+
+});
+
+
+app.factory('localstorage', function ($window) {
+	return {
+		get: (key) => {
+			if($window.localStorage[key]) {
+				return angular.fromJson(localStorage[key]);
+			}
+		},
+		set: (key, val) => {
+			$window.localStorage[key] = angular.toJson(val);
+		}
+	};
+});
+
+
+app.factory('recentlyWatchedItems', function(localstorage){
 	return {
 		get: () => {
-			if(localStorage['historyItems']){
-				var items = JSON.parse(localStorage['historyItems']);
-				if(items.length){
-					return items;
-				}
-			}
-			
-			return ['american dad', 'family guy'];
+			var items = localstorage.get('recentlyWatchedItems');
+			return items || [];
 		},
 		set: (val) => {
-			localStorage['historyItems'] = JSON.stringify(val);
+			localstorage.set('recentlyWatchedItems', val);
+		}
+	};
+});
+
+
+
+app.factory('historyItems', function(localstorage){
+	return {
+		get: () => {
+			var items = localstorage.get('historyItems');
+			return items || ['american dad', 'family guy'];
+		},
+		set: (val) => {
+			localstorage.set('historyItems', val);
 		}
 	};
 });
@@ -121,6 +174,7 @@ app.controller('historyCtrl', function($scope, $state, historyItems){
 	$scope.go = function(){
 		if ($scope.search && $scope.search.length > 2) {
 			$scope.historyItems.push($scope.search);
+			$scope.historyItems = _.uniqWith($scope.historyItems, angular.equals);
 			$state.go('app.views.searchResults', {query: $scope.search}, {});
 			$scope.search = '';
 			historyItems.set($scope.historyItems);
@@ -138,20 +192,18 @@ app.controller('historyCtrl', function($scope, $state, historyItems){
 
 });
 
-app.controller('searchCtrl', function($scope, $stateParams){
-	
-});
-
 // aka seasons
 app.controller('searchResultsCtrl', function($scope, $stateParams, results){
 	$scope.results = results;
 });
 
-app.controller('episodesCtrl', function($scope, episodes){
+app.controller('episodesCtrl', function($scope, episodes, seasonTitle){
+	$scope.title = seasonTitle;
 	$scope.episodes = episodes;
 });
 
-app.controller('playerCtrl', function($scope, $sce, $rootElement, videoHtml){
+app.controller('playCtrl', function($scope, $sce, $rootElement, videoHtml, episodeTitle){
+	$scope.title = episodeTitle;
 	$scope.playerHtml = $sce.trustAsHtml(videoHtml.fragment);
 	$scope.fullscreen = () => {
 		$rootElement.find('video')[0].webkitEnterFullscreen();
