@@ -5,6 +5,8 @@ const {ipcMain} = require('electron');
 const electron = require('electron')
 
 
+
+
 function registerAsyncRequestResponseMessageHandler(task, fn){
 	ipcMain.on('msg-' + task, (event, message) => {
 		var messageId = message.messageId;
