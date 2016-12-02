@@ -7,39 +7,33 @@ function scoop(selector){
 	$(selector).each(function(){
 		var href = $(this).attr('href');
 		var text = $(this).text();
-		rv.push({href: href, text: text});
+		rv.push({url: href, title: text});
 	});
 	return rv;
+}
+
+function awaitDomNode(selector, timeout = 10000){
+	return new Promise(function(resolve, reject) {
+		const interval = setInterval(() => {
+			if(document.querySelector(selector)){
+				clear();
+				resolve();
+			}
+		}, 100);
+		const timeoutId = setTimeout(() => {
+			clear();
+			reject();
+		}, timeout);
+		const clear = () => {
+			clearInterval(interval);
+			clearTimeout(timeoutId);
+		};
+	});
 }
 
 ipcRenderer.on('crawl', function(event, msg) {
 	event.sender.send('crawled', scoop(msg.selector));
 });
-
-
-function wait(until, timeout){
-	timeout = timeout || 5000;
-	return new Promise(function(resolve, reject){
-		var startTime = new Date().getTime();
-		var id = setInterval(function(){
-			if(until()){
-				clearInterval(id);				
-				resolve();
-			}else if(new Date().getTime() - startTime > timeout){
-				reject('timed out waiting after ' + timeout + ' ms');
-			}
-		}, 200);
-	});
-
-
-}
-
-// ok i see whats going on here
-// this context is lost when the page reloads
-// so this handler might get re-attached
-//.. is probably does
-// but it was in the middle of executing
-// ...hmmmm
 
 const resultSelector = '.listing td:even a';
 
@@ -61,7 +55,16 @@ ipcRenderer.on('crawl-season', function(event, msg) {
 });
 
 ipcRenderer.on('extract-video', function(event, msg) {
-	var $ = require('jquery');
-	event.sender.send('extract-video-result', {fragment: $('video')[0].outerHTML });
+	event.sender.send('extract-video-result', { fragment: document.querySelector('video').outerHTML });
 });
 
+ipcRenderer.on('scoop-google', function(event, msg) {
+	awaitDomNode('.kno-ecr-pt').then(function(){
+		event.sender.send('google-result' + msg.messageId, { 	
+			title: document.querySelector('.kno-ecr-pt').innerHTML,
+			description: document.querySelector('.kno-rdesc').childNodes[0].innerHTML
+	});		
+	}, function(){
+		event.sender.send('google-result' + msg.messageId, { title: 'aww snap', description: 'Timed out, booo!' } );
+	});
+});

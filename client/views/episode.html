@@ -1,0 +1,10 @@
+
+	<a ng-mouseenter="hoverEpisode(episode)"
+	 uib-tooltip-template="'views/tooltip.html'"
+	 tooltip-append-to-body="true"
+	 tooltip-is-open="openTooltip"
+	 ui-state="'app.views.searchResults.episodes.play'"
+  	 ui-state-params="{episodeUrl: episode.url, episodeTitle: episode.title}"
+   >
+   {{episode.title}}
+   </a>

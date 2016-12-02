@@ -5,7 +5,11 @@ const _ = require('lodash');
 
 require('angular-ui-router');
 require('angular-sanitize');
-var app = angular.module('kissfucker', ['ui.router', 'ngSanitize']);
+require('angular-ui-bootstrap');
+
+var imdb = require('imdb-api');
+
+var app = angular.module('kissfucker', ['ui.router', 'ui.bootstrap', 'ngSanitize']);
 
 app.config(function($stateProvider, $urlRouterProvider){
 	
@@ -37,7 +41,6 @@ app.config(function($stateProvider, $urlRouterProvider){
 		url: '/searchResults/:query',
 		resolve:{
 			results: function(search, $stateParams) {
-				console.log('search now!');
 				if ($stateParams.query) {
 					return search($stateParams.query);		
 				} else {
@@ -73,8 +76,8 @@ app.config(function($stateProvider, $urlRouterProvider){
 			
 			episodeTitle: ($stateParams) => $stateParams.episodeTitle,
 
-			videoHtml: function($stateParams){
-				return extractVideoElement($stateParams.episodeUrl);
+			videoHtml: function($stateParams, video){
+				return video($stateParams.episodeUrl);
 			}
 		},	
 		views:{
@@ -189,12 +192,34 @@ app.controller('historyCtrl', function($scope, $state, historyItems){
 		});
 		historyItems.set($scope.historyItems);
 	};
-
 });
 
 // aka seasons
 app.controller('searchResultsCtrl', function($scope, $stateParams, results){
 	$scope.results = results;
+});
+	
+app.directive('episode', function(google){
+	return {
+		scope: {
+			episode: '='
+		},
+		link: function($scope){
+			$scope.hoverEpisode = episode => {
+				$scope.googleResult = { description: 'Loading...' }; 
+				google(episode.title)
+				.then((result) => {
+						$scope.googleResult = result;
+						$scope.$digest();
+				}, err => {
+					// probably cancelled
+					$scope.googleResult = null;
+					$scope.$digest();
+				});					
+			};
+		},
+		templateUrl: 'views/episode.html'
+	};
 });
 
 app.controller('episodesCtrl', function($scope, episodes, seasonTitle){
@@ -204,6 +229,7 @@ app.controller('episodesCtrl', function($scope, episodes, seasonTitle){
 
 app.controller('playCtrl', function($scope, $sce, $rootElement, videoHtml, episodeTitle){
 	$scope.title = episodeTitle;
+	debugger;
 	$scope.playerHtml = $sce.trustAsHtml(videoHtml.fragment);
 	$scope.fullscreen = () => {
 		$rootElement.find('video')[0].webkitEnterFullscreen();
@@ -213,20 +239,39 @@ app.controller('playCtrl', function($scope, $sce, $rootElement, videoHtml, episo
 app.service('episodeService', function(){
 
 	return function(url){
-		return crawlSeasonPage(url);
+		return crawlSeasonPage(url).promise;
 	}
 
 });
 
 
 app.service('search', function(){
-
 	return function(query){
-		return searchKissCartoon(query);
+		return searchKissCartoon(query).promise;
 	}
 
 });
 
+app.service('google', function(promiseCancelCaller){
+	return promiseCancelCaller(searchGoogle);
+});
+
+app.service('promiseCancelCaller', function(){
+	return function(func){
+		let funkyPromise;	
+		return function (arg1, arg2) {
+			if (funkyPromise) {
+				funkyPromise.cancel();
+			}
+			funkyPromise = func(arg1, arg2);
+			return funkyPromise.promise;
+		};
+	}
+});
+
+app.service('video', function(){
+	return url => extractVideoElement(url).promise;
+});
 
 var messageId = 69;
 
@@ -242,14 +287,27 @@ function extractVideoElement(url) {
 	return requestResponse('extract-video', {url: url});
 }
 
-function requestResponse(task, message){
-	return new Promise(function(resolve, reject){
+function searchGoogle(query) {
+	return requestResponse('search-google', { query });
+}
 
+function requestResponse(task, message){
+	let promiseReject;
+	const promise = (messageId => new Promise(function(resolve, reject){
+		promiseReject = reject;
 		ipcRenderer.once('response-' + task + '-' + messageId, function(event, response) {
 			resolve(response);
 		});
-
 		ipcRenderer.send('msg-' + task, { messageId: messageId, message: message || {} });
-		messageId++;
-	});
+	}))(messageId);
+	const cancel = (messageId => () => {
+		ipcRenderer.send('cancel-' + task + messageId, {});
+		ipcRenderer.removeAllListeners('response-' + task + '-' + messageId);
+		promiseReject('cancelled');
+	})(messageId);
+	messageId++;
+	return {
+		promise,
+		cancel
+	}
 }

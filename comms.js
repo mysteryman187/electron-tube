@@ -4,33 +4,39 @@
 const {ipcMain} = require('electron');
 const electron = require('electron')
 
-
-
+const DEBUG = 1; // false | (true | 1) | 2
 
 function registerAsyncRequestResponseMessageHandler(task, fn){
 	ipcMain.on('msg-' + task, (event, message) => {
 		var messageId = message.messageId;
 		message = message.message;
+        // bah!
+        message.messageId = messageId; // fixme!
 		fn(message, function(response){
 			event.sender.send('response-' + task + '-' + messageId, response);
 		});
 	});
 }
 
+
 function createOffScreenUtilityWindow(){
 	const BrowserWindow = electron.BrowserWindow
     var myWindow = new BrowserWindow({
-    	x: -9000, 
-    	y: -9000,
+    	x: DEBUG === 2 ? 800 : -9000, 
+    	y: DEBUG === 2 ? 0 : -9000,
     	width: 900,
     	height: 800,
     	frame: true,
-    	skipTaskbar: true,
-      nodeIntegration: false, // this is very important for security
+    	skipTaskbar: DEBUG ? false : true,
+        nodeIntegration: false, // this is very important for security
     	webPreferences : {
     		preload: `${__dirname}//crawler/crawler-preload.js`,
     	}
   	});
+
+    if (DEBUG) {
+        myWindow.webContents.openDevTools();
+    }
     return myWindow;
 }
 
@@ -80,6 +86,25 @@ registerAsyncRequestResponseMessageHandler('search', function(request, done){
   		done(linksArray);
   		myWindow.close();
   	});
+});
+
+registerAsyncRequestResponseMessageHandler('search-google', function(request, done){
+    var myWindow = createOffScreenUtilityWindow();
+    myWindow.loadURL('http://google.co.uk/#q=' + encodeURIComponent(request.query));
+    myWindow.webContents.once('dom-ready', () => {
+        myWindow.webContents.send('scoop-google', request);
+    });
+    const cancelHandler = () => {
+        ipcMain.removeAllListeners('cancel-search-google' + request.messageId);
+        ipcMain.removeAllListeners('google-result' + request.messageId);  
+        myWindow.close();  
+    };
+    const resultHandler = (event, msg) => {
+       done(msg);
+       cancelHandler();
+    };
+    ipcMain.once('google-result' + request.messageId, resultHandler); 
+    ipcMain.once('cancel-search-google' + request.messageId, cancelHandler);       
 });
 
 
