@@ -4,7 +4,7 @@
 const {ipcMain} = require('electron');
 const electron = require('electron')
 
-const DEBUG = 1; // false | (true | 1) | 2
+const DEBUG = false; // false | (true | 1) | 2
 
 function registerAsyncRequestResponseMessageHandler(task, fn){
 	ipcMain.on('msg-' + task, (event, message) => {
