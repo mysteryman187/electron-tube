@@ -62,9 +62,10 @@ ipcRenderer.on('scoop-google', function(event, msg) {
 	awaitDomNode('.kno-ecr-pt').then(function(){
 		event.sender.send('google-result' + msg.messageId, { 	
 			title: document.querySelector('.kno-ecr-pt').innerHTML,
-			description: document.querySelector('.kno-rdesc').childNodes[0].innerHTML
+			description: document.querySelector('.kno-rdesc').childNodes[0].innerHTML,
+			success: true
 	});		
 	}, function(){
-		event.sender.send('google-result' + msg.messageId, { title: 'aww snap', description: 'Timed out, booo!' } );
+		event.sender.send('google-result' + msg.messageId, { title: 'aww snap', description: 'Timed out, booo!', success: false } );
 	});
 });

@@ -252,8 +252,21 @@ app.service('search', function(){
 
 });
 
-app.service('google', function(promiseCancelCaller){
-	return promiseCancelCaller(searchGoogle);
+app.service('google', function(promiseCancelCaller, localstorage){
+	const caller = promiseCancelCaller(searchGoogle);
+	return function(query) {
+		const cached = localstorage.get(`google-result-${query}`);
+		if (cached) {
+			return Promise.resolve(cached);
+		}
+		return caller(query)
+		.then((result) => {
+			if(result.success){
+				localstorage.set(`google-result-${query}`, result);				
+			}
+			return result;
+		});
+	};
 });
 
 app.service('promiseCancelCaller', function(){
