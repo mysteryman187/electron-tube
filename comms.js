@@ -43,6 +43,8 @@ function createOffScreenUtilityWindow(){
 registerAsyncRequestResponseMessageHandler('extract-video', function(request, done){
     var myWindow = createOffScreenUtilityWindow();
 
+    console.log('extract video request', request);
+
 	myWindow.loadURL('http://kisscartoon.me' + request.url);
 
   	myWindow.webContents.once('dom-ready', () => {
@@ -50,6 +52,7 @@ registerAsyncRequestResponseMessageHandler('extract-video', function(request, do
     });
 
   	ipcMain.once('extract-video-result', (event, result) => {
+        console.log('extract video result', result);
   		done(result);
   		myWindow.close();
   	});
@@ -61,10 +64,10 @@ registerAsyncRequestResponseMessageHandler('crawl-season', function(request, don
 
 	myWindow.loadURL('http://kisscartoon.me' + request.url);
   	myWindow.webContents.once('dom-ready', () => {
-  		myWindow.webContents.send('crawl-season', request);
+  		myWindow.webContents.send('scoop', request);
     });
 
-  	ipcMain.once('crawl-season-result', (event, linksArray) => {
+  	ipcMain.once('search-result', (event, linksArray) => {
   		done(linksArray);
   		myWindow.close();
   	});

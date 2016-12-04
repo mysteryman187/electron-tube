@@ -40,9 +40,14 @@ app.config(function($stateProvider, $urlRouterProvider){
 	}).state('app.views.searchResults', {
 		url: '/searchResults/:query',
 		resolve:{
-			results: function(search, $stateParams) {
+			results: function(search, $stateParams, $state) {
 				if ($stateParams.query) {
-					return search($stateParams.query);		
+					return search($stateParams.query).then((result) => {
+						if (!result.isSearch) {
+							return $state.go('app.views.searchResults.episodes', { url: result.url, seasonTitle: $stateParams.query });
+						}
+						return result.results;
+					});	
 				} else {
 					return [];
 				}
@@ -57,11 +62,10 @@ app.config(function($stateProvider, $urlRouterProvider){
 	}).state('app.views.searchResults.episodes', {
 		url: '/episodes/:seasonTitle/:url',
 		resolve:{
-
 			seasonTitle: ($stateParams) => $stateParams.seasonTitle,
-
 			episodes: function(episodeService, $stateParams){
-				return episodeService($stateParams.url);		
+				return episodeService($stateParams.url)
+				.then(result => result.results);		
 			}
 		},
 		views: {
@@ -207,7 +211,7 @@ app.directive('episode', function(google){
 		link: function($scope){
 			$scope.hoverEpisode = episode => {
 				$scope.googleResult = { description: 'Loading...' }; 
-				google(episode.title)
+				google(episode.title.split('-')[0].trim())
 				.then((result) => {
 						$scope.googleResult = result;
 						$scope.$digest();

@@ -1,15 +1,24 @@
 
 const {ipcRenderer} = require('electron');
 
-function scoop(selector){
+
+function scoop(){
 	var $ = require('jquery');	
 	var rv = [];
+	const resultSelector = '.listing td:even a';
+	const episodeSelector = '.listing td a';
+	const isSearch = window.location.pathname.indexOf('/Search') !== -1;
+	selector = isSearch ? resultSelector : episodeSelector;
 	$(selector).each(function(){
 		var href = $(this).attr('href');
 		var text = $(this).text();
-		rv.push({url: href, title: text});
+		rv.push({url: href, title: text });
 	});
-	return rv;
+	return {
+		url: window.location.pathname,
+		isSearch,
+		results: rv
+	};
 }
 
 function awaitDomNode(selector, timeout = 10000){
@@ -35,7 +44,6 @@ ipcRenderer.on('crawl', function(event, msg) {
 	event.sender.send('crawled', scoop(msg.selector));
 });
 
-const resultSelector = '.listing td:even a';
 
 ipcRenderer.on('search', function(event, msg) {
 	var $ = require('jquery');
@@ -46,12 +54,7 @@ ipcRenderer.on('search', function(event, msg) {
 
 
 ipcRenderer.on('scoop', function(event, msg) {
-	event.sender.send('search-result', scoop(resultSelector));
-});
-
-ipcRenderer.on('crawl-season', function(event, msg) {
-	var episodeSelector = '.listing td a';
-	event.sender.send('crawl-season-result', scoop(episodeSelector));
+	event.sender.send('search-result', scoop());
 });
 
 ipcRenderer.on('extract-video', function(event, msg) {
