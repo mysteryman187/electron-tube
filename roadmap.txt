@@ -1,0 +1,14 @@
+auto-play a season....
+it shoudl have a toggle on/off switch
+it should have separate toggle for reverse order
+
+
+king of the hill support!
+search for "king of the hill"
+...the results page has a bunch of episode links not season links
+should be possible to detect and support this scenario
+
+ok
+
+if url has /search then search
+otherwise its episode list

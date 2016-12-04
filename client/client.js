@@ -229,7 +229,6 @@ app.controller('episodesCtrl', function($scope, episodes, seasonTitle){
 
 app.controller('playCtrl', function($scope, $sce, $rootElement, videoHtml, episodeTitle){
 	$scope.title = episodeTitle;
-	debugger;
 	$scope.playerHtml = $sce.trustAsHtml(videoHtml.fragment);
 	$scope.fullscreen = () => {
 		$rootElement.find('video')[0].webkitEnterFullscreen();
